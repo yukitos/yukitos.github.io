@@ -64,6 +64,7 @@
         function posToString(p) { return "{" + p.X + "," + p.Y + "}"; }
 
         function drawLine(ctx, from, to) {
+            ctx.lineWidth = $("#lw").val();
             ctx.beginPath();
             ctx.moveTo(from.X, from.Y);
             ctx.lineTo(to.X, to.Y);
@@ -78,7 +79,6 @@
 
             var canvas = $("#canvas");
             var c = canvas.get(0).getContext('2d');
-            c.lineWidth = $("#lw").val();
             c.lineCap = "round";
             c.lineJoin = "round";
             c.globalAlpha = 1.0;
