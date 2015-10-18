@@ -11,30 +11,35 @@
         .content {
             margin: 20px;
         }
+        .content>div {
+            margin: 5px;
+        }
+        label {
+            display: inline-block;
+            width: 160px;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
     <div class="content">
         <div>
-            <label>
-                Line width (1-100): <input id="lw" type="number" value="1" />
-            </label>
+            <label for="lw">Line width (1-100):</label>
+            <input id="lw" type="number" value="1" />
         </div>
         <div>
-            <label>
-                Repeat count (1-360): <input id="rc" type="number" value="60" />
-            </label>
+            <label for="rc">Repeat degree (1-360):</label>
+            <input id="rc" type="number" value="60" />
         </div>
         <div>
-            <label>
-                Pen color: <input id="pc" type="color" value="black"/>
-            </label>
+            <label for="pc">Pen color:</label>
+            <input id="pc" type="color" value="black"/>
         </div>
         <div>
             <input id="cc" type="button" value="Clear canvas" />
         </div>
-        <canvas id="canvas" width="800" height="600"></canvas>
     </div>
+    <canvas id="canvas" width="800" height="800"></canvas>
 
     <script src="Scripts/jquery-2.1.4.min.js"></script>
     <script src="Scripts/rx.lite.min.js"></script>
@@ -73,8 +78,8 @@
             ctx.strokeStyle = $("#pc").val();
 
             ctx.beginPath();
-            ctx.moveTo(from.X, from.Y);
-            ctx.lineTo(to.X, to.Y);
+            ctx.moveTo(Math.floor(from.X), Math.floor(from.Y));
+            ctx.lineTo(Math.floor(to.X), Math.floor(to.Y));
             ctx.stroke();
         }
         $(function () {
@@ -96,7 +101,7 @@
 
             var offsetX = canvas.offset().left;
             var offsetY = canvas.offset().top;
-            var center = { X: 400, Y: 300 };
+            var center = { X: canvas.width() / 2, Y: canvas.height() / 2 };
 
             var mouseDown = Rx.Observable.fromEvent(canvas, 'mousedown');
             var mouseMove = Rx.Observable.fromEvent(canvas, 'mousemove');
