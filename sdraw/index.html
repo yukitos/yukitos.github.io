@@ -26,6 +26,11 @@
             </label>
         </div>
         <div>
+            <label>
+                Pen color: <input id="pc" type="color" value="black"/>
+            </label>
+        </div>
+        <div>
             <input id="cc" type="button" value="Clear canvas" />
         </div>
         <canvas id="canvas" width="800" height="600"></canvas>
@@ -65,6 +70,8 @@
 
         function drawLine(ctx, from, to) {
             ctx.lineWidth = $("#lw").val();
+            ctx.strokeStyle = $("#pc").val();
+
             ctx.beginPath();
             ctx.moveTo(from.X, from.Y);
             ctx.lineTo(to.X, to.Y);
