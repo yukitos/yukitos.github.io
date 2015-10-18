@@ -1,0 +1,139 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+	<meta charset="utf-8" />
+    <style type="text/css">
+        #canvas {
+             border: 1px solid black;
+             margin: 20px;
+        }
+        .content {
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <div>
+            <label>
+                Line width (1-100): <input id="lw" type="number" value="1" />
+            </label>
+        </div>
+        <div>
+            <label>
+                Repeat count (1-360): <input id="rc" type="number" value="60" />
+            </label>
+        </div>
+        <div>
+            <input id="cc" type="button" value="Clear canvas" />
+        </div>
+        <canvas id="canvas" width="800" height="600"></canvas>
+    </div>
+
+    <script src="Scripts/jquery-2.1.4.min.js"></script>
+    <script src="Scripts/rx.lite.min.js"></script>
+    <script src="Scripts/rx.jquery.min.js"></script>
+    <script src="Scripts/linq.min.js"></script>
+    <script src="Scripts/linq.rx.js"></script>
+    <script type="text/javascript">
+        function rot2D(target, origin, theta) {
+            var angle = theta * Math.PI / 180.0;
+            return {
+                X: Math.cos(angle) * (target.X - origin.X) - Math.sin(angle) * (target.Y - origin.Y) + origin.X,
+                Y: Math.sin(angle) * (target.X - origin.X) + Math.cos(angle) * (target.Y - origin.Y) + origin.Y
+            };
+        }
+
+        function lineSym(src, lineFrom, lineTo) {
+            var x1 = lineFrom.X;
+            var y1 = -lineFrom.Y;
+            var x2 = lineTo.X;
+            var y2 = -lineTo.Y;
+            var a = (y2 - y1) / (x2 - x1);
+            var b = -1;
+            var c = y1 - x1 * a;
+            var sx = src.X;
+            var sy = -src.Y;
+            return {
+                X: sx - 2 * a * (a * sx + b * sy + c) / (a * a + b * b),
+                Y: -(sy - 2 * b * (a * sx + b * sy + c) / (a * a + b * b))
+            };
+        }
+
+        function posToString(p) { return "{" + p.X + "," + p.Y + "}"; }
+
+        function drawLine(ctx, from, to) {
+            ctx.beginPath();
+            ctx.moveTo(from.X, from.Y);
+            ctx.lineTo(to.X, to.Y);
+            ctx.stroke();
+        }
+        $(function () {
+            var adjustValue = function (e, from, to) {
+                var v = e.val();
+                if (v < from) { e.val(from); }
+                else if (to < v) { e.val(to); }
+            }
+
+            var canvas = $("#canvas");
+            var c = canvas.get(0).getContext('2d');
+            c.lineWidth = $("#lw").val();
+            c.lineCap = "round";
+            c.lineJoin = "round";
+            c.globalAlpha = 1.0;
+
+            $("#lw").on("keyup mouseup", function () { adjustValue($(this), 1, 100); });
+            $("#rc").on("keyup mouseup", function () { adjustValue($(this), 1, 360); });
+            $("#cc").on("click", function () { c.clearRect(0, 0, canvas.width(), canvas.height()); });
+
+            var offsetX = canvas.offset().left;
+            var offsetY = canvas.offset().top;
+            var center = { X: 400, Y: 300 };
+
+            var mouseDown = Rx.Observable.fromEvent(canvas, 'mousedown');
+            var mouseMove = Rx.Observable.fromEvent(canvas, 'mousemove');
+            var mouseUp = Rx.Observable.fromEvent(canvas, 'mouseup');
+
+            var traceLineStream = mouseDown.map(function (md) {
+                var movesFromMouseDown = mouseMove.takeUntil(mouseUp);
+                var movesFromMouseDonwAndMouseDown = movesFromMouseDown
+                    .scan({}, function (acc, x) {
+                        return { prev: acc.current, current: x };
+                    })
+                    .map(function (mm) {
+                        return {
+                            mouseDownPoint: mm.prev ? mm.prev : md,
+                            mouseMovePoint: mm.current,
+                            startPoint: md
+                        };
+                    });
+                return movesFromMouseDonwAndMouseDown;
+            }).concatAll();
+
+            var subscription = traceLineStream.subscribe(function (y) {
+                var mdp = y.mouseDownPoint;
+                var mmp = y.mouseMovePoint;
+                var sp = y.startPoint;
+
+                var md = { X: parseInt(mdp.clientX - offsetX), Y: parseInt(mdp.clientY - offsetY) };
+                var mm = { X: parseInt(mmp.clientX - offsetX), Y: parseInt(mmp.clientY - offsetY) };
+                var st = { X: parseInt(sp.clientX - offsetX), Y: parseInt(sp.clientY - offsetY) };
+
+                var deg = $("#rc").val();
+                Rx.Observable.range(0, 360 / deg)
+                    .subscribe(function (i) {
+                        var from = rot2D(md, center, i * deg);
+                        var to = rot2D(mm, center, i * deg);
+                        drawLine(c, from, to);
+
+                        // also draw line symmetric position
+                        var from2 = lineSym(from, st, center);
+                        var to2 = lineSym(to, st, center);
+                        drawLine(c, from2, to2);
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
